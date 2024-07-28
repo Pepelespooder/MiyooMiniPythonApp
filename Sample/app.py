@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import sys
 import os
+from datetime import datetime
 
 class App:
     def draw_text(self, font, color, x, y, align='left', text=''):
@@ -18,7 +19,7 @@ class App:
     def draw_button(self, x, y, text, active):
         width = 100
         height = 40
-        if active == True:
+        if active:
             color = self.button_color
         else:
             color = self.button_color_active
@@ -34,9 +35,7 @@ class App:
         scrollbox_width = 4
         scrollbox_height = height // (self.memo_lines_max / self.memo_lines_ouput_max)
         scrollbox_y = y + (height - scrollbox_height) * (percent / 100.0)
-        # background scrollbox
         pygame.draw.rect(self.screen, self.scrollbox_background_color, (x, y, scrollbox_width, height), 0)
-        # active scroll
         if percent != -1:
             pygame.draw.rect(self.screen, self.white, (x, scrollbox_y, scrollbox_width, scrollbox_height), 0)
 
@@ -58,47 +57,41 @@ class App:
         self.button_color_active = pygame.Color(59, 71, 84)
         self.progressbar_color = pygame.Color(50, 54, 65)
         self.progressbar_bar_color = pygame.Color(160, 169, 176)
-        #self.font = pygame.font.Font(os.path.join(os.path.dirname(__file__), 'arial.ttf'), 17)
         self.font_size = 32
         self.font = pygame.font.Font(None, self.font_size)
         self.fps_controller = pygame.time.Clock()
         self.layout_index = 0
-        self.main_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
+        self.main_list = ['Set RTC', 'Option 2', 'Option 3']
         self.main_list_output_max = 12
         self.list_selected_index = 0    
         self.list_selected_offset = 0  
         self.list_selected_item = ''
         
-        self.memo = 'Python is a high-level programming language that has gained immense popularity due to its numerous advantages. Here are some key benefits that make Python attractive to developers and organizations worldwide:\n\n'
-        self.memo += '1. Simplicity and Readability:\nPython is known for its simple and concise syntax, which makes it easy to read and understand, even for beginners. This reduces learning time and simplifies code maintenance.\n\n' 
-        self.memo += '2. Extensive Libraries and Frameworks:\nPython has a vast standard library and numerous third-party libraries and frameworks, allowing it to address a wide range of tasks from web development (Django, Flask) to data analysis (Pandas, NumPy) and machine learning (TensorFlow, scikit-learn).\n\n' 
-        self.memo += '3. Cross-Platform Compatibility: Python is cross-platform, meaning code written in Python can run on various operating systems like Windows, macOS, and Linux without modification.\n\n'
-        self.memo += '4. Community and Support:\nPython boasts one of the largest and most active developer communities. This ensures ample resources, support, and regular updates to keep the language current with modern needs.\n\n'
-        self.memo += '5. Versatility:\nPython is used in numerous fields, including web development, scientific research, artificial intelligence, and task automation. Its versatility allows developers to use the same language for various tasks, enhancing efficiency.\n\n'
-        self.memo += '6. High Development Productivity:\nPython''s high-level syntax and rich library ecosystem accelerate development, reducing time-to-market and increasing development flexibility.\n\n'
-        self.memo += '7. Integration with Other Languages:\nPython easily integrates with other languages like C, C++, and Java, serving as a bridge between different software components and maximizing performance.\n\n'
-        self.memo += '8. Educational Use:\nDue to its simplicity, Python is often used for educational purposes, making it an excellent first language for learning programming basics.\n\n'
-        self.memo += 'Overall, Python offers a powerful set of tools and capabilities, making it an ideal choice for solving diverse programming challenges.'
+        self.input_active = False
+        self.input_text = ''
         
-        #self.memo = '1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 1234567890 '
-        
-        self.memo_line_offset = 0
-        self.memo_lines_max = 0
-        self.memo_lines_ouput_max = 13
-        
-        # Statuses
-        self.progressbar_value = 75
-        self.item1_turn_status = '< turn on>'
-        self.btn1_active = False
-        self.btn2_active = False
+        self.rtc_file = 'rtc.txt'
+        self.load_rtc()
 
         self.main_loop()
+
+    def load_rtc(self):
+        if os.path.exists(self.rtc_file):
+            with open(self.rtc_file, 'r') as file:
+                self.rtc_time = file.read().strip()
+        else:
+            self.rtc_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self.save_rtc()
+
+    def save_rtc(self):
+        with open(self.rtc_file, 'w') as file:
+            file.write(self.rtc_time)
 
     def main_loop(self):
         while True:
             self.handle_events()
             self.update_screen()
-            self.fps_controller.tick(30) #fps limiter
+            self.fps_controller.tick(30)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -106,7 +99,6 @@ class App:
                 pygame.quit()
                 sys.exit()
             elif event.type == KEYDOWN:
-                # L1=K_e, L2=K_TAB, R1=K_t, R2=K_BACKSPACE, X=K_LSHIFT, Y=K_LALT, B=K_LCTRL, A=K_SPACE, SELECT=K_RCTRL, START=K_RETURN, DPADUP=K_UP, DPADDOWN=K_DOWN, DPAFLEFT=K_LEFT, DPADRIGHT=K_RIGHT
                 if self.layout_index == 0:
                     if event.key == K_ESCAPE or event.key == K_BACKSPACE or event.key == K_SPACE:
                         pygame.quit()
@@ -121,26 +113,12 @@ class App:
                             self.list_selected_index += 1
                         else:
                             self.list_selected_index = 0
-                    elif event.key == K_LEFT:
-                        if self.progressbar_value > 0:
-                            self.progressbar_value -= 1
-                    elif event.key == K_RIGHT:
-                        if self.progressbar_value < 100:
-                            self.progressbar_value += 1
                     elif event.key == K_RETURN or event.key == K_LCTRL:
                         self.list_selected_item = self.main_list[self.list_selected_index]
-                        if self.list_selected_index != 0:
+                        if self.list_selected_index == 0:
                             self.layout_index = 1
-                            self.memo_line_offset = 0
-                        else:
-                            if self.item1_turn_status == '< turn on>':
-                                self.item1_turn_status = '< turn off>'
-                            else:
-                                self.item1_turn_status = '< turn on>'
-                    elif event.key == K_e:
-                        self.btn1_active = not self.btn1_active
-                    elif event.key == K_t:
-                        self.btn2_active = not self.btn2_active
+                            self.input_active = True
+                            self.input_text = self.rtc_time
                     if self.list_selected_index > self.main_list_output_max - 1:
                         self.list_selected_offset = self.list_selected_index // self.main_list_output_max * self.main_list_output_max
                     else:
@@ -149,23 +127,25 @@ class App:
                 elif self.layout_index == 1:
                     if event.key == K_ESCAPE or event.key == K_BACKSPACE or event.key == K_SPACE:
                         self.layout_index = 0
-                    elif event.key == K_UP:
-                        if self.memo_line_offset > 0:
-                            self.memo_line_offset -= 1
-                    elif event.key == K_DOWN:
-                        if self.memo_line_offset < self.memo_lines_max - self.memo_lines_ouput_max:
-                            self.memo_line_offset += 1
-                    
+                        self.input_active = False
+                    elif event.key == K_RETURN and self.input_active:
+                        self.rtc_time = self.input_text
+                        self.save_rtc()
+                        self.layout_index = 0
+                        self.input_active = False
+                    elif event.key == K_BACKSPACE:
+                        if self.input_active:
+                            self.input_text = self.input_text[:-1]
+                    else:
+                        if self.input_active:
+                            self.input_text += event.unicode
                     
     def update_screen(self):
-        self.screen.fill((0, 0, 0))
+        self.screen.fill(self.black)
         if self.layout_index == 0:
             self.draw_layout_list()
-            self.draw_button(320, 430, 'Btn 1 (L)', self.btn1_active)
-            self.draw_button(430, 430, 'Btn 2 (R)', self.btn2_active)
-            self.draw_progressbar(8, 440, 300, 20, self.progressbar_value)
         elif self.layout_index == 1:
-            self.draw_layout_memo()
+            self.draw_layout_set_rtc()
         
         pygame.display.flip()
         
@@ -184,7 +164,6 @@ class App:
                 item_background_color = self.menu_item_color
                 item_font_color = self.white
             
-            # Items
             x = 8
             y = self.font_size * (i - self.list_selected_offset + 1) + 8
             width = self.app_width - 16
@@ -192,31 +171,9 @@ class App:
             pygame.draw.rect(self.screen, item_background_color, (x, y, width, height - 1), 0)
             self.draw_text(self.font, item_font_color, x + 2, y + 4, 'left', self.cut_str(line, 70))
             
-            if i == 0:
-                self.draw_text(self.font, item_font_color, self.app_width - 80, y + 4, 'center', self.item1_turn_status)
-            
-    def draw_layout_memo(self):
-        self.draw_text(self.font, self.white, 8, 8, 'left', 'Display: ' + self.list_selected_item)
-        lines = self.add_line_breaks(self.memo, 46).split('\n')
-        self.memo_lines_max = len(lines)
-        
-        # Scroll
-        if self.memo_lines_max > self.memo_lines_ouput_max:
-            scroll_percent = self.memo_line_offset * 100 // (self.memo_lines_max - self.memo_lines_ouput_max)
-        else:
-            scroll_percent = -1
-        self.draw_scrollbox(self.app_width - 8, 30, 6, scroll_percent)
-        
-        self.draw_text(self.font, self.gray, 620, 455, 'right', str(self.memo_line_offset * 100 // (self.memo_lines_max - self.memo_lines_ouput_max)) + '%')
-        pygame.draw.rect(self.screen, self.memo_background_color, (9, 30, self.app_width - 24, self.app_height - 60), 0)
-        
-        # Output lines of text
-        for i, line in enumerate(lines):
-            if i < self.memo_line_offset:
-                continue
-            if i - self.memo_line_offset >= self.memo_lines_ouput_max:
-                continue
-            self.draw_text(self.font, self.white, 18, self.font_size * (i - self.memo_line_offset) + 40, 'left', line)
+    def draw_layout_set_rtc(self):
+        self.draw_text(self.font, self.white, 8, 8, 'left', 'Set RTC')
+        self.draw_text(self.font, self.green, 10, 50, 'left', self.input_text)
         
     def cut_str(self, string, n):
         if len(string) > n:
